@@ -28,17 +28,17 @@ public class TokenService : ITokenService
         // Payload information
         var payload = new Dictionary<string, string>
         {
-            { "iss", "ccdp_token_service" },
-            { "sub", "" },
-            { "aud", "my_client_id" },
-            { "exp", DateTime.Now.AddMilliseconds(36000000).ToString() },
-            { "iat", DateTime.Now.ToString() },
+            { "iss", "ccdp_token_service" }, // TODO: Read configurations from appsettings.json
+            { "sub", "" }, // TODO: Read configurations from appsettings.json
+            { "aud", "my_client_id" }, // TODO: Read from client request
+            { "exp", DateTime.Now.AddMilliseconds(36000000).ToString() }, // TODO: Read configurations from appsettings.json
+            { "iat", DateTime.Now.ToString() }, // TODO: Read configurations from appsettings.json
         };
 
         var jwsToken = JWT.Encode(payload, certPrivateKey, JwsAlgorithm.RS256);
         var jweToken = JWT.Encode(jwsToken, certPublicKey, JweAlgorithm.RSA_OAEP_256, JweEncryption.A256CBC_HS512);
 
-        DecodeJweToken(jweToken, certPrivateKey!, certPublicKey!);
+        var decodedJwtToken = DecodeJweToken(jweToken, certPrivateKey!, certPublicKey!);
 
         return await Task.FromResult(jweToken);
     }
@@ -51,6 +51,12 @@ public class TokenService : ITokenService
     #region private  helper methods
     private X509Certificate2 GetServerCertificate()
     {
+        /*
+         * TODO: 
+            1. Change function name (if need).
+            2. Check if certificate is exist in the database => if not, then get certificate from pem file => then save it into the database.
+         */
+
         // Read certificate from pem string
         var certInfo = GetCertificateFilePath();
 
@@ -68,9 +74,11 @@ public class TokenService : ITokenService
         return new CertInformation { CertPath = certPath, CertPrivateKeyPath = certPrivateKeyPath };
     }
 
-    private void DecodeJweToken(string jweToken, RSA certPrivateKey, RSA certPublicKey)
+    private string DecodeJweToken(string jweToken, RSA certPrivateKey, RSA certPublicKey)
     {
-        var jws = JWT.Decode(jweToken, certPrivateKey, JweAlgorithm.RSA_OAEP_256, JweEncryption.A256CBC_HS512);
+        var jwt = JWT.Decode(jweToken, certPrivateKey, JweAlgorithm.RSA_OAEP_256, JweEncryption.A256CBC_HS512);
+
+        return jwt;
     }
     #endregion
 }
